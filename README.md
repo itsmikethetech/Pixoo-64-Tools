@@ -1,5 +1,7 @@
 ## Pixoo-64-Tools
 
+[Purchase a Pixoo 64 from Divoom by clicking here.](https://collabs.shop/1eue7d)
+
 ![image](https://github.com/user-attachments/assets/9d642211-f854-4fee-93e8-3bcc83fe8803)
 
 # **📌 Requirements**
