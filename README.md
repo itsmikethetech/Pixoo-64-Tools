@@ -24,11 +24,21 @@ Install the required dependencies using pip:
   - Replace the placeholder IP address in the script with your Pixoo 64’s IP
   - Execute the script using Python
 
-`python StreamGUI.py`
-- A Python GUI that captures your screen and sends it as a 64x64 stream to the display. Includes start, stop, and image preview.
+# Available Scripts
 
-`SendText.py`
-- A test script that sends a line of text to the display.
+🖥️ Screen Streaming GUI
+
+`python StreamGUI.py`
+- A Python-based GUI that captures your screen and streams it as a 64×64 display. Features:
+  - Start/stop functionality
+  - Live image preview
+
+🔤 Send Text
+
+`python SendText.py`
+- A simple test script to send a line of text to the Pixoo 64 display.
+
+📸 Send Screenshot
 
 `python SendScreenshot.py`
-- A test script that takes a screenshot and sends it to the display.
+- Captures a screenshot of your screen and sends it to the display.
