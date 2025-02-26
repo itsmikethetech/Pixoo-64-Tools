@@ -3,7 +3,7 @@ import time
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from PIL import ImageGrab, Image, ImageTk, ImageDraw
+from PIL import ImageGrab, Image, ImageTk, ImageDraw, ImageFilter
 from pixoo import Pixoo
 
 # Configure logging
@@ -29,12 +29,26 @@ streaming = threading.Event()
 # Flag for showing/hiding grid
 show_grid = True
 
-# Variable to keep track of the current resize method
-# The user will pick from "BICUBIC" or "NEAREST".
+# Variable to keep track of the current resize method (default is BICUBIC)
 resize_method = Image.BICUBIC
 
-# Store last preview image so we can refresh on toggle
-last_preview_image = None
+# Global variables for preview refresh
+last_source_image = None  # The last raw image (screenshot or loaded) to reprocess on option changes
+
+# Dictionary for available filters
+filter_options = {
+    "NONE": None,
+    "BLUR": ImageFilter.BLUR,
+    "CONTOUR": ImageFilter.CONTOUR,
+    "DETAIL": ImageFilter.DETAIL,
+    "EDGE_ENHANCE": ImageFilter.EDGE_ENHANCE,
+    "EDGE_ENHANCE_MORE": ImageFilter.EDGE_ENHANCE_MORE,
+    "EMBOSS": ImageFilter.EMBOSS,
+    "FIND_EDGES": ImageFilter.FIND_EDGES,
+    "SHARPEN": ImageFilter.SHARPEN,
+    "SMOOTH": ImageFilter.SMOOTH,
+    "SMOOTH_MORE": ImageFilter.SMOOTH_MORE
+}
 
 def connect_to_pixoo(ip_address: str) -> bool:
     global pixoo
@@ -63,18 +77,50 @@ def draw_grid(image, grid_size=8, line_color=(200, 200, 200), line_width=1):
 
 def update_preview_label(image: Image.Image):
     """
-    Update the global preview_label with the given image (already sized 512x512).
-    Store a copy in last_preview_image so we can refresh on grid toggle or resizing mode change.
+    Update the preview_label with the given image (already sized 512x512).
     """
-    global last_preview_image
-    last_preview_image = image.copy()
     preview_image = draw_grid(image.copy())  # apply the grid if show_grid is True
-
     preview_image_tk = ImageTk.PhotoImage(preview_image)
     preview_label.config(image=preview_image_tk)
     preview_label.image = preview_image_tk
 
+def crop_center(image):
+    """Crop the image to a centered square based on the smallest dimension."""
+    width, height = image.size
+    new_edge = min(width, height)
+    left = (width - new_edge) // 2
+    top = (height - new_edge) // 2
+    right = left + new_edge
+    bottom = top + new_edge
+    return image.crop((left, top, right, bottom))
+
+def process_image(image):
+    """
+    Process the image by:
+      1. Cropping to a centered square if 'Crop to 1:1' is enabled.
+      2. Resizing to 64x64 using the selected scaling method.
+      3. Applying the selected filter (if not 'NONE').
+    """
+    if crop_to_square_mode.get():
+        image = crop_center(image)
+    processed = image.resize((64, 64), resize_method)
+    selected_filter = filter_mode_var.get()
+    if selected_filter != "NONE" and filter_options[selected_filter] is not None:
+        processed = processed.filter(filter_options[selected_filter])
+    return processed
+
+def refresh_preview():
+    """
+    If a source image is available, re-process it using current options and update the preview.
+    """
+    if last_source_image is not None:
+        processed_image = process_image(last_source_image)
+        # Scale up for preview display (512x512)
+        preview_image = processed_image.resize((512, 512), resize_method)
+        update_preview_label(preview_image)
+
 def screen_capture():
+    global last_source_image
     while streaming.is_set():
         if pixoo is None:
             time.sleep(0.5)
@@ -83,13 +129,13 @@ def screen_capture():
         start_time = time.time()
         try:
             screenshot = ImageGrab.grab()
-            # Use the selected resize_method
-            resized_screenshot = screenshot.resize((64, 64), resize_method)
-            pixoo.draw_image(resized_screenshot)
+            last_source_image = screenshot.copy()
+            processed_image = process_image(screenshot)
+            pixoo.draw_image(processed_image)
             pixoo.push()
 
-            # Update the preview (512x512) in the UI
-            preview_image = resized_screenshot.resize((512, 512), resize_method)
+            # Update the preview (scale processed image from 64x64 to 512x512)
+            preview_image = processed_image.resize((512, 512), resize_method)
             update_preview_label(preview_image)
         except Exception as e:
             logging.error(f"Error during screen capture: {e}")
@@ -100,6 +146,7 @@ def screen_capture():
             time.sleep(time_to_sleep)
 
 def browse_image():
+    global last_source_image
     file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif")])
     if not file_path:
         return
@@ -109,13 +156,13 @@ def browse_image():
 
     try:
         image = Image.open(file_path).convert("RGB")
-        # Use the selected resize_method
-        resized_image = image.resize((64, 64), resize_method)
-        pixoo.draw_image(resized_image)
+        last_source_image = image.copy()
+        processed_image = process_image(image)
+        pixoo.draw_image(processed_image)
         pixoo.push()
 
         # Update the preview
-        preview_image = resized_image.resize((512, 512), resize_method)
+        preview_image = processed_image.resize((512, 512), resize_method)
         update_preview_label(preview_image)
 
         logging.info(f"Successfully sent image to Pixoo: {file_path}")
@@ -147,31 +194,40 @@ def on_connect_button_click():
         messagebox.showerror("Connection Failed", f"Could not connect to Pixoo at {ip_address}")
 
 def toggle_grid():
-    """Toggle the global show_grid flag and refresh the preview if available."""
-    global show_grid, last_preview_image
+    """Toggle the grid overlay on the preview."""
+    global show_grid
     show_grid = not show_grid
-
-    if last_preview_image is not None:
-        update_preview_label(last_preview_image)
+    # Reapply preview update with the new grid setting
+    refresh_preview()
 
 def on_resize_mode_change(event=None):
-    """
-    Called whenever the user picks a new resize method from the Combobox.
-    Updates global resize_method and refreshes the preview if available.
-    """
-    global resize_method, last_preview_image
+    global resize_method
     mode = resize_mode_var.get()
     if mode == "NEAREST":
         resize_method = Image.NEAREST
-    else:
+    elif mode == "BILINEAR":
+        resize_method = Image.BILINEAR
+    elif mode == "BICUBIC":
         resize_method = Image.BICUBIC
-    if last_preview_image is not None:
-        update_preview_label(last_preview_image)
+    elif mode == "LANCZOS":
+        resize_method = Image.LANCZOS
+    elif mode == "BOX":
+        resize_method = Image.BOX
+    elif mode == "HAMMING":
+        resize_method = Image.HAMMING
+    refresh_preview()
+
+def on_filter_change(event=None):
+    refresh_preview()
+
+def on_crop_toggle():
+    refresh_preview()
 
 # --- GUI Setup ---
 root = tk.Tk()
 root.title("Pixoo 64 Tools by MikeTheTech")
 
+# IP Connection Frame
 ip_frame = ttk.Frame(root)
 ip_frame.pack(padx=10, pady=10, fill="x")
 
@@ -185,9 +241,11 @@ ip_entry.insert(0, DEFAULT_PIXOO_IP)
 connect_button = ttk.Button(ip_frame, text="Connect", command=on_connect_button_click)
 connect_button.pack(side=tk.LEFT, padx=5)
 
+# Preview Label
 preview_label = ttk.Label(root)
 preview_label.pack(padx=10, pady=10)
 
+# Control Buttons Frame
 button_frame = ttk.Frame(root)
 button_frame.pack(padx=10, pady=10)
 
@@ -203,16 +261,39 @@ browse_button.pack(side=tk.LEFT, padx=5)
 grid_button = ttk.Button(button_frame, text="Toggle Grid", command=toggle_grid)
 grid_button.pack(side=tk.LEFT, padx=5)
 
-# --- Combobox for selecting resize method ---
+# --- Scaling Method Combobox ---
 resize_mode_var = tk.StringVar(value="BICUBIC")  # default
 resize_mode_combobox = ttk.Combobox(
     button_frame,
     textvariable=resize_mode_var,
-    values=["BICUBIC", "NEAREST"],
-    state="readonly"
+    values=["NEAREST", "BILINEAR", "BICUBIC", "LANCZOS", "BOX", "HAMMING"],
+    state="readonly",
+    width=10
 )
 resize_mode_combobox.pack(side=tk.LEFT, padx=5)
 resize_mode_combobox.bind("<<ComboboxSelected>>", on_resize_mode_change)
+
+# --- Filter Combobox ---
+filter_mode_var = tk.StringVar(value="NONE")
+filter_combobox = ttk.Combobox(
+    button_frame,
+    textvariable=filter_mode_var,
+    values=list(filter_options.keys()),
+    state="readonly",
+    width=12
+)
+filter_combobox.pack(side=tk.LEFT, padx=5)
+filter_combobox.bind("<<ComboboxSelected>>", on_filter_change)
+
+# --- Crop Toggle Checkbutton ---
+crop_to_square_mode = tk.BooleanVar(value=False)
+crop_checkbutton = ttk.Checkbutton(
+    button_frame,
+    text="Crop to 1:1",
+    variable=crop_to_square_mode,
+    command=on_crop_toggle
+)
+crop_checkbutton.pack(side=tk.LEFT, padx=5)
 
 # Attempt initial connection to default IP (optional)
 connected = connect_to_pixoo(DEFAULT_PIXOO_IP)
