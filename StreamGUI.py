@@ -227,6 +227,34 @@ def on_crop_toggle():
 root = tk.Tk()
 root.title("Pixoo 64 Tools by MikeTheTech")
 
+# Set up style for theme toggling
+style = ttk.Style(root)
+# Global variable to track current theme
+current_theme = "light"
+
+def apply_theme(theme):
+    if theme == "dark":
+        bg = "#2e2e2e"      # Dark background
+        fg = "#ffffff"      # Light foreground
+    else:
+        bg = "#ffffff"      # Light background
+        fg = "#000000"      # Dark foreground
+    style.theme_use('clam')
+    style.configure("TFrame", background=bg)
+    style.configure("TLabel", background=bg, foreground=fg)
+    style.configure("TButton", background=bg, foreground=fg)
+    style.configure("TCheckbutton", background=bg, foreground=fg)
+    style.configure("TCombobox", fieldbackground=bg, background=bg, foreground=fg)
+    root.configure(bg=bg)
+
+def toggle_theme():
+    global current_theme
+    current_theme = "dark" if current_theme == "light" else "light"
+    apply_theme(current_theme)
+
+# Apply the initial theme
+apply_theme(current_theme)
+
 # IP Connection Frame
 ip_frame = ttk.Frame(root)
 ip_frame.pack(padx=10, pady=10, fill="x")
@@ -260,6 +288,10 @@ browse_button.pack(side=tk.LEFT, padx=5)
 
 grid_button = ttk.Button(button_frame, text="Toggle Grid", command=toggle_grid)
 grid_button.pack(side=tk.LEFT, padx=5)
+
+# Toggle Theme Button
+toggle_theme_button = ttk.Button(button_frame, text="Toggle Theme", command=toggle_theme)
+toggle_theme_button.pack(side=tk.LEFT, padx=5)
 
 # --- Scaling Method Combobox ---
 resize_mode_var = tk.StringVar(value="BICUBIC")  # default
