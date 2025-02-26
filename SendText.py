@@ -1,5 +1,5 @@
-import logging
-from pixoo import Pixoo
+import logging # This module helps with debugging
+from pixoo import Pixoo # This module is just amazing. :)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -26,6 +26,7 @@ except Exception as e:
     exit(1)
 
 # Draw text on the display
+# You can adjust the position, color, and more using the variables below.
 try:
     message = "Hello, Pixoo!"
     position = (0, 0)
