@@ -165,22 +165,12 @@ def on_resize_mode_change(event=None):
         resize_method = Image.NEAREST
     else:
         resize_method = Image.BICUBIC
-
-    # If there's a current preview image, re-apply the new resize mode
-    # by resizing last_preview_image's base (64x64) or simply refreshing
-    # the 512x512. However, if you want to re-resize from 64->512 with
-    # the new method, you might need to store the original 64x64 as well.
-    # Here, we simply call update_preview_label to re-draw with the existing data.
     if last_preview_image is not None:
-        # Since last_preview_image is already 512x512, re-applying a different
-        # interpolation won't reconstruct from the original. For demonstration,
-        # we just toggle the grid again. If you want a fully accurate re-resize,
-        # you'd need to store the original 64x64 (or full) image.
         update_preview_label(last_preview_image)
 
 # --- GUI Setup ---
 root = tk.Tk()
-root.title("Pixoo Display Controller")
+root.title("Pixoo 64 Tools by MikeTheTech")
 
 ip_frame = ttk.Frame(root)
 ip_frame.pack(padx=10, pady=10, fill="x")
