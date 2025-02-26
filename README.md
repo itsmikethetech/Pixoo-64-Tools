@@ -10,6 +10,11 @@ With a simple setup and an intuitive interface, you can transform your Pixoo 64 
 
 [![image](https://github.com/user-attachments/assets/9d642211-f854-4fee-93e8-3bcc83fe8803)
 ](https://collabs.shop/1eue7d)
+
+<img src="https://github.com/user-attachments/assets/b3493a02-860f-4666-aad9-1ab2d4a5b141" width="49%"></img>
+<img src="https://github.com/user-attachments/assets/c5d1f93f-a5ec-4f42-a865-8edddb2085c0" width="49%"></img>
+
+
 # **📌 Requirements**
 
 Before using these scripts, ensure you have the following dependencies installed:
