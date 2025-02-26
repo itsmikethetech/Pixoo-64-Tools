@@ -8,8 +8,8 @@ With a simple setup and an intuitive interface, you can transform your Pixoo 64 
 [![divoompixoo64 2](https://github.com/user-attachments/assets/d54e03ac-10aa-4415-b33d-0af6850f4866)
 ](https://collabs.shop/1eue7d)
 
-![image](https://github.com/user-attachments/assets/9d642211-f854-4fee-93e8-3bcc83fe8803)
-
+[![image](https://github.com/user-attachments/assets/9d642211-f854-4fee-93e8-3bcc83fe8803)
+](https://collabs.shop/1eue7d)
 # **📌 Requirements**
 
 Before using these scripts, ensure you have the following dependencies installed:
