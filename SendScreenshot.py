@@ -29,7 +29,7 @@ except Exception as e:
 # Resize the screenshot to 64x64 pixels
 try:
     logging.debug("Resizing the screenshot to 64x64 pixels.")
-    resized_screenshot = screenshot.resize((64, 64), Image.LANCZOS)
+    resized_screenshot = screenshot.resize((64, 64), Image.BICUBIC)
     logging.debug("Screenshot resized successfully.")
 except Exception as e:
     logging.error(f"Failed to resize the screenshot: {e}")
